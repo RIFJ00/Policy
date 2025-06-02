@@ -8,22 +8,24 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Application Structure Plan: 
         - Header: Title and brief introduction.
-        - Main Content: 
-            - Score Type Tabs: Tabs to select score type for ranking.
-            - Chart Type Tabs: Tabs to select chart type.
-            - Filters: Buttons to filter issues by category.
-            - Chart Section: Dynamically updated chart (Bar, Bubble, Radar). Bubble chart now color-coded by category.
+        - Main Layout: Two columns (Sidebar for controls, Main content for charts/lists).
+        - Sidebar:
+            - Score Type Radio Buttons.
+            - Chart Type Radio Buttons.
+            - Category Filter Buttons.
+        - Main Content:
+            - Chart Section: Dynamically updated chart (Bar, Bubble, Radar). Bubble chart color-coded by category.
             - Issue List Section: Cards for each issue, order updated by score type.
-        - Modal: Displays detailed information for a selected issue, including all score types.
-        - Footer/Info Section: Explanation of scoring and key takeaways.
-        This structure enhances data exploration by allowing users to combine different score perspectives with various visualization methods.
+            - Report Insights, Scoring Methodology.
+        - Modal: Displays detailed information for a selected issue.
+        This structure centralizes controls in a sidebar for better usability and a cleaner main content area.
     -->
-    <!-- Visualization & Content Choices: 
-        - Bar Chart (Chart.js): Default view for ranking.
-        - Bubble Chart (Matrix - Chart.js): X-axis: Economic Scale (dummy), Y-axis: Selected Score, Bubble Size: Selected Score. Bubbles are color-coded by category. Goal: Show relationship between economic scale and selected priority/concern, with category differentiation.
-        - Radar Chart (Chart.js): Shows 4 scores for top 5 issues (based on selected score type). Goal: Multi-dimensional comparison of top issues.
-        - Score Type Tabs (HTML/JS): Replaces dropdown for better UX.
-        - Chart Type Tabs (HTML/JS): Allows switching between visualizations.
+    <!-- Visualization & Content Choices: (Same as previous, UI for selection changed)
+        - Bar Chart (Chart.js)
+        - Bubble Chart (Matrix - Chart.js)
+        - Radar Chart (Chart.js)
+        - Score Type Selection: Radio buttons in sidebar.
+        - Chart Type Selection: Radio buttons in sidebar.
         - Category Legend for Bubble Chart: Dynamically generated HTML legend.
         Library/Method: Chart.js for all charts, Vanilla JS for interactions, Tailwind CSS for styling.
     -->
@@ -61,21 +63,46 @@
             opacity: 1;
             transform: translateY(0);
         }
-        .tab-button {
-            padding: 0.5rem 1rem;
-            margin-right: 0.5rem;
-            border-radius: 0.375rem;
-            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        .sidebar-section {
+            margin-bottom: 1.5rem; /* mb-6 */
         }
-        .tab-button.active {
+        .sidebar-label {
+            display: block;
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            color: #0369a1; /* sky-700 */
+            margin-bottom: 0.5rem; /* mb-2 */
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 0.375rem; /* rounded-md */
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .radio-label:hover {
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .radio-label input[type="radio"]:checked + span {
+            font-weight: 600;
+            color: #0284c7; /* sky-600 */
+        }
+        .filter-btn {
+             display: block;
+             width: 100%;
+             text-align: left;
+             margin-bottom: 0.25rem; /* mb-1 */
+        }
+        .filter-btn.active {
             background-color: #0284c7; /* sky-600 */
             color: white;
         }
-        .tab-button:not(.active) {
+        .filter-btn:not(.active) {
             background-color: #e2e8f0; /* slate-200 */
             color: #334155; /* slate-700 */
         }
-        .tab-button:not(.active):hover {
+         .filter-btn:not(.active):hover {
             background-color: #cbd5e1; /* slate-300 */
         }
         .legend-item {
@@ -102,74 +129,100 @@
             <p class="text-slate-500 text-md sm:text-lg mb-3">一般社団法人日本みらい研作成</p>
         </header>
 
-        <section id="introduction" class="mb-8 p-6 bg-white rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-sky-600 mb-3">はじめに</h2>
-            <p class="text-slate-600 leading-relaxed">
-                このレポートは、2025年3月から5月にかけて実施された計46本の世論調査結果を統合し、さらに2025年6月2日時点の最新動向も踏まえ、国民がどのような課題に高い関心を寄せているかを分析したものである。各課題には、国民の関心の度合いを示す「関心度スコア」に加え、「政治的優先度」「経済的優先度」「社会的優先度」の各スコア（いずれも当研究所による分析・仮設定）を付与し、主な関心理由や経済への影響も併記している。このページを通じて、現代日本の国民意識の動向を多角的に理解する一助となれば幸いである。チャートやカードをクリックして、詳細情報を参照されたい。
-            </p>
-        </section>
-
-        <section id="controls-section" class="mb-8 p-6 bg-white rounded-lg shadow-md">
-            <div class="mb-6">
-                <label class="block text-xl font-semibold text-sky-600 mb-2 text-center">表示スコア種別:</label>
-                <div id="score-type-tabs" class="flex flex-wrap justify-center gap-2">
-                    <button data-scoretype="concernScore" class="tab-button active">国民の関心度</button>
-                    <button data-scoretype="politicalPriorityScore" class="tab-button">政治的優先度</button>
-                    <button data-scoretype="economicPriorityScore" class="tab-button">経済的優先度</button>
-                    <button data-scoretype="socialPriorityScore" class="tab-button">社会的優先度</button>
+        <div class="md:flex">
+            <aside id="sidebar" class="w-full md:w-1/4 md:mr-6 mb-6 md:mb-0 p-6 bg-white rounded-lg shadow-md">
+                <div class="sidebar-section">
+                    <label class="sidebar-label">表示スコア種別:</label>
+                    <div id="score-type-controls">
+                        <label class="radio-label">
+                            <input type="radio" name="scoreType" value="concernScore" class="mr-2 accent-sky-600" checked>
+                            <span>国民の関心度</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="scoreType" value="politicalPriorityScore" class="mr-2 accent-sky-600">
+                            <span>政治的優先度</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="scoreType" value="economicPriorityScore" class="mr-2 accent-sky-600">
+                            <span>経済的優先度</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="scoreType" value="socialPriorityScore" class="mr-2 accent-sky-600">
+                            <span>社会的優先度</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <label class="block text-xl font-semibold text-sky-600 mb-2 text-center">グラフ種別:</label>
-                <div id="chart-type-tabs" class="flex flex-wrap justify-center gap-2">
-                    <button data-charttype="bar" class="tab-button active">ランキング（棒グラフ）</button>
-                    <button data-charttype="bubble" class="tab-button">マトリクス（バブル）</button>
-                    <button data-charttype="radar" class="tab-button">多角的比較（レーダー）</button>
+
+                <div class="sidebar-section">
+                    <label class="sidebar-label">グラフ種別:</label>
+                    <div id="chart-type-controls">
+                        <label class="radio-label">
+                            <input type="radio" name="chartType" value="bar" class="mr-2 accent-sky-600" checked>
+                            <span>ランキング（棒グラフ）</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="chartType" value="bubble" class="mr-2 accent-sky-600">
+                            <span>マトリクス（バブル）</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="chartType" value="radar" class="mr-2 accent-sky-600">
+                            <span>多角的比較（レーダー）</span>
+                        </label>
+                    </div>
                 </div>
-            </div>
-        </section>
+                
+                <div class="sidebar-section">
+                    <label class="sidebar-label">カテゴリで絞り込む:</label>
+                    <div id="category-filters">
+                        <button data-category="all" class="filter-btn active px-4 py-2 rounded-md">全課題</button>
+                        </div>
+                </div>
+            </aside>
 
-        <section id="filters" class="mb-6 text-center">
-            <h2 class="text-xl font-semibold text-sky-600 mb-3">カテゴリで絞り込む</h2>
-            <div id="category-filters" class="flex flex-wrap justify-center gap-2 sm:gap-3">
-                <button data-category="all" class="filter-btn active bg-sky-600 text-white px-4 py-2 rounded-md hover:bg-sky-700 transition-colors text-sm sm:text-base">全課題</button>
-            </div>
-        </section>
+            <main id="main-content" class="w-full md:w-3/4">
+                <section id="introduction" class="mb-8 p-6 bg-white rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-sky-600 mb-3">はじめに</h2>
+                    <p class="text-slate-600 leading-relaxed">
+                        このレポートは、2025年3月から5月にかけて実施された計46本の世論調査結果を統合し、さらに2025年6月2日時点の最新動向も踏まえ、国民がどのような課題に高い関心を寄せているかを分析したものである。各課題には、国民の関心の度合いを示す「関心度スコア」に加え、「政治的優先度」「経済的優先度」「社会的優先度」の各スコア（いずれも当研究所による分析・仮設定）を付与し、主な関心理由や経済への影響も併記している。このページを通じて、現代日本の国民意識の動向を多角的に理解する一助となれば幸いである。チャートやカードをクリックして、詳細情報を参照されたい。
+                    </p>
+                </section>
 
-        <section id="chart-section" class="mb-8 p-4 sm:p-6 bg-white rounded-lg shadow-md">
-            <h2 id="chart-title" class="text-2xl font-semibold text-sky-600 mb-4 text-center">国民の関心度スコアランキング</h2>
-            <div class="chart-container">
-                <canvas id="issuesChart"></canvas>
-            </div>
-            <p id="chart-description" class="text-xs text-slate-500 mt-2 text-center">グラフの項目にマウスオーバー（またはタップ）すると詳細が表示される。</p>
-            <div id="bubble-legend-container" class="mt-4"></div>
-        </section>
+                <section id="chart-section" class="mb-8 p-4 sm:p-6 bg-white rounded-lg shadow-md">
+                    <h2 id="chart-title" class="text-2xl font-semibold text-sky-600 mb-4 text-center">国民の関心度スコアランキング</h2>
+                    <div class="chart-container">
+                        <canvas id="issuesChart"></canvas>
+                    </div>
+                    <p id="chart-description" class="text-xs text-slate-500 mt-2 text-center">グラフの項目にマウスオーバー（またはタップ）すると詳細が表示される。</p>
+                    <div id="bubble-legend-container" class="mt-4"></div>
+                </section>
 
-        <section id="issues-list" class="mb-8">
-            <h2 id="list-title" class="text-2xl font-semibold text-sky-600 mb-4 text-center">課題一覧（国民の関心度順）</h2>
-            <div id="issues-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            </div>
-        </section>
+                <section id="issues-list" class="mb-8">
+                    <h2 id="list-title" class="text-2xl font-semibold text-sky-600 mb-4 text-center">課題一覧（国民の関心度順）</h2>
+                    <div id="issues-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    </div>
+                </section>
 
-        <section id="report-insights" class="p-6 bg-white rounded-lg shadow-md mb-8">
-            <h2 class="text-2xl font-semibold text-sky-600 mb-3">読み取りポイント</h2>
-            <ul class="list-disc list-inside text-slate-600 space-y-2 leading-relaxed">
-                <li>物価高騰への対策は依然として国民最大の関心事である。</li>
-                <li>社会保障や将来不安に関する項目が上位に多く見られる。</li>
-                <li>エネルギー政策や安全保障に関する関心も引き続き高い水準を維持している。</li>
-                <li>新たにランキング入りした項目は、気候変動や教育問題など、中長期的な課題が多い。</li>
-                <li>表示スコア種別やグラフ種別を切り替えることで、異なる視点から課題の重要性や特性を確認できる。マトリクスグラフではカテゴリー別の傾向も把握しやすい。</li>
-            </ul>
-        </section>
+                <section id="report-insights" class="p-6 bg-white rounded-lg shadow-md mb-8">
+                    <h2 class="text-2xl font-semibold text-sky-600 mb-3">読み取りポイント</h2>
+                    <ul class="list-disc list-inside text-slate-600 space-y-2 leading-relaxed">
+                        <li>物価高騰への対策は依然として国民最大の関心事である。</li>
+                        <li>社会保障や将来不安に関する項目が上位に多く見られる。</li>
+                        <li>エネルギー政策や安全保障に関する関心も引き続き高い水準を維持している。</li>
+                        <li>新たにランキング入りした項目は、気候変動や教育問題など、中長期的な課題が多い。</li>
+                        <li>表示スコア種別やグラフ種別を切り替えることで、異なる視点から課題の重要性や特性を確認できる。マトリクスグラフではカテゴリー別の傾向も把握しやすい。</li>
+                    </ul>
+                </section>
 
-        <section id="scoring-methodology" class="p-6 bg-white rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-sky-600 mb-3">関心度・優先度スコア算出式</h2>
-            <div class="text-slate-600 leading-relaxed">
-                <p>スコア = (各評価指標 × 重み付け / 基準値) × 100</p>
-                <p class="text-sm mt-1">（各種スコアにおいて、トップ課題のスコアを100点基準に線形換算）</p>
-                <p class="mt-2">「国民の関心度スコア」は、世論調査における課題への肯定的な回答の割合と、その課題が調査で取り上げられる頻度（サリエンス係数）を組み合わせて算出されている。その他の「優先度スコア」およびマトリクスグラフ用の「経済規模（成長性）」は、政治的・経済的・社会的観点から当研究所が独自に評価・仮設定したものである。これにより、多角的な視点から課題の重要性を評価することを目指している。</p>
-            </div>
-        </section>
+                <section id="scoring-methodology" class="p-6 bg-white rounded-lg shadow-md">
+                    <h2 class="text-2xl font-semibold text-sky-600 mb-3">関心度・優先度スコア算出式</h2>
+                    <div class="text-slate-600 leading-relaxed">
+                        <p>スコア = (各評価指標 × 重み付け / 基準値) × 100</p>
+                        <p class="text-sm mt-1">（各種スコアにおいて、トップ課題のスコアを100点基準に線形換算）</p>
+                        <p class="mt-2">「国民の関心度スコア」は、世論調査における課題への肯定的な回答の割合と、その課題が調査で取り上げられる頻度（サリエンス係数）を組み合わせて算出されている。その他の「優先度スコア」およびマトリクスグラフ用の「経済規模（成長性）」は、政治的・経済的・社会的観点から当研究所が独自に評価・仮設定したものである。これにより、多角的な視点から課題の重要性を評価することを目指している。</p>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
 
     <div id="modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 opacity-0 pointer-events-none z-50">
@@ -238,8 +291,8 @@
         const closeModalBtn = document.getElementById('close-modal');
         
         const categoryFiltersContainer = document.getElementById('category-filters');
-        const scoreTypeTabsContainer = document.getElementById('score-type-tabs');
-        const chartTypeTabsContainer = document.getElementById('chart-type-tabs');
+        const scoreTypeControls = document.getElementById('score-type-controls');
+        const chartTypeControls = document.getElementById('chart-type-controls');
         const chartTitleEl = document.getElementById('chart-title');
         const listTitleEl = document.getElementById('list-title');
         const chartDescriptionEl = document.getElementById('chart-description');
@@ -357,7 +410,7 @@
             dataToDisplay.sort((a, b) => b[currentScoreType] - a[currentScoreType]);
             
             dataToDisplay.forEach((issue, index) => {
-                issue.rank = index + 1; // Update rank based on current sort and filter
+                issue.rank = index + 1; 
             });
 
             dataToDisplay.forEach((issue, index) => {
@@ -368,7 +421,6 @@
             
             updateChart(dataToDisplay); 
             updateActiveFilterButton();
-            updateActiveTabButtons();
             renderBubbleLegend(dataToDisplay);
         }
 
@@ -378,11 +430,16 @@
         }
 
         function renderCategoryFilters() {
+            // Clear existing buttons except "All Issues"
+            const allButton = categoryFiltersContainer.querySelector('[data-category="all"]');
+            categoryFiltersContainer.innerHTML = '';
+            categoryFiltersContainer.appendChild(allButton); // Re-add the "All Issues" button
+
             const categories = getUniqueCategories();
             categories.forEach(category => {
                 const button = document.createElement('button');
                 button.dataset.category = category;
-                button.className = 'filter-btn bg-slate-200 text-slate-700 px-4 py-2 rounded-md hover:bg-slate-300 transition-colors text-sm sm:text-base';
+                button.className = 'filter-btn px-4 py-2 rounded-md'; // Removed active class, will be set by updateActiveFilterButton
                 button.textContent = category;
                 button.addEventListener('click', () => {
                     currentFilter = category;
@@ -390,33 +447,20 @@
                 });
                 categoryFiltersContainer.appendChild(button);
             });
-            document.querySelector('[data-category="all"]').addEventListener('click', () => {
-                currentFilter = 'all';
-                renderContent();
-            });
         }
         
         function updateActiveFilterButton() {
-            document.querySelectorAll('.filter-btn').forEach(btn => {
+            document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
                 if (btn.dataset.category === currentFilter) {
-                    btn.classList.add('bg-sky-600', 'text-white');
+                    btn.classList.add('active', 'bg-sky-600', 'text-white');
                     btn.classList.remove('bg-slate-200', 'text-slate-700');
                 } else {
-                    btn.classList.remove('bg-sky-600', 'text-white');
+                    btn.classList.remove('active', 'bg-sky-600', 'text-white');
                     btn.classList.add('bg-slate-200', 'text-slate-700');
                 }
             });
         }
         
-        function updateActiveTabButtons() {
-            scoreTypeTabsContainer.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.scoretype === currentScoreType);
-            });
-            chartTypeTabsContainer.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.charttype === currentChartType);
-            });
-        }
-
         function renderBubbleLegend(data) {
             bubbleLegendContainer.innerHTML = '';
             if (currentChartType !== 'bubble') {
@@ -487,8 +531,8 @@
                 datasets: [{
                     label: `${scoreTypeName} vs 経済規模`,
                     data: bubbleData,
-                    backgroundColor: bubbleData.map(d => categoryColorMap[d.category] || 'rgba(128,128,128,0.7)'), // Fallback color
-                    borderColor: bubbleData.map(d => (categoryColorMap[d.category] || 'rgba(128,128,128,1)').replace('0.7', '1')), // Darker border
+                    backgroundColor: bubbleData.map(d => categoryColorMap[d.category] || 'rgba(128,128,128,0.7)'), 
+                    borderColor: bubbleData.map(d => (categoryColorMap[d.category] || 'rgba(128,128,128,1)').replace('0.7', '1')), 
                 }]
             };
             const chartOptions = {
@@ -498,7 +542,7 @@
                     y: { title: { display: true, text: `${scoreTypeName}スコア` }, grid: { color: 'rgba(203, 213, 225, 0.5)' }, ticks: { color: '#475569' } }
                 },
                 plugins: {
-                    legend: { display: false }, // Custom legend will be used
+                    legend: { display: false }, 
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.7)', titleFont: { size: 14 }, bodyFont: { size: 12 },
                         callbacks: {
@@ -527,11 +571,11 @@
             const radarLabels = ['国民の関心度', '政治的優先度', '経済的優先度', '社会的優先度'];
             const datasets = top5Data.map((issue, index) => {
                 const baseColors = [
-                    [2, 132, 199],    // sky-600
-                    [59, 130, 246],   // blue-500
-                    [16, 185, 129],   // emerald-500
-                    [139, 92, 246],  // violet-500
-                    [239, 68, 68]     // red-500
+                    [2, 132, 199],    
+                    [59, 130, 246],   
+                    [16, 185, 129],   
+                    [139, 92, 246],  
+                    [239, 68, 68]     
                 ];
                 const color = baseColors[index % baseColors.length];
                 return {
@@ -588,16 +632,16 @@
             }
         }
         
-        scoreTypeTabsContainer.addEventListener('click', (event) => {
-            if (event.target.classList.contains('tab-button')) {
-                currentScoreType = event.target.dataset.scoretype;
+        scoreTypeControls.addEventListener('change', (event) => {
+            if (event.target.name === 'scoreType') {
+                currentScoreType = event.target.value;
                 renderContent();
             }
         });
 
-        chartTypeTabsContainer.addEventListener('click', (event) => {
-            if (event.target.classList.contains('tab-button')) {
-                currentChartType = event.target.dataset.charttype;
+        chartTypeControls.addEventListener('change', (event) => {
+            if (event.target.name === 'chartType') {
+                currentChartType = event.target.value;
                 renderContent();
             }
         });
