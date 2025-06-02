@@ -6,29 +6,6 @@
     <title>国民の関心課題について</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Application Structure Plan: 
-        - Header: Title and brief introduction.
-        - Main Layout: Two columns (Sidebar for controls, Main content for charts/lists).
-        - Sidebar:
-            - Score Type Radio Buttons.
-            - Chart Type Radio Buttons.
-            - Category Filter Buttons.
-        - Main Content:
-            - Chart Section: Dynamically updated chart (Bar, Bubble, Radar). Bubble chart color-coded by category.
-            - Issue List Section: Cards for each issue, order updated by score type.
-            - Report Insights, Scoring Methodology.
-        - Modal: Displays detailed information for a selected issue.
-        This structure centralizes controls in a sidebar for better usability and a cleaner main content area.
-    -->
-    <!-- Visualization & Content Choices: (Same as previous, UI for selection changed)
-        - Bar Chart (Chart.js)
-        - Bubble Chart (Matrix - Chart.js)
-        - Radar Chart (Chart.js)
-        - Score Type Selection: Radio buttons in sidebar.
-        - Chart Type Selection: Radio buttons in sidebar.
-        - Category Legend for Bubble Chart: Dynamically generated HTML legend.
-        Library/Method: Chart.js for all charts, Vanilla JS for interactions, Tailwind CSS for styling.
-    -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -93,6 +70,9 @@
              width: 100%;
              text-align: left;
              margin-bottom: 0.25rem; /* mb-1 */
+             padding: 0.5rem 1rem; /* px-4 py-2 */
+             border-radius: 0.375rem; /* rounded-md */
+             transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
         }
         .filter-btn.active {
             background-color: #0284c7; /* sky-600 */
@@ -174,7 +154,6 @@
                 <div class="sidebar-section">
                     <label class="sidebar-label">カテゴリで絞り込む:</label>
                     <div id="category-filters">
-                        <button data-category="all" class="filter-btn active px-4 py-2 rounded-md">全課題</button>
                         </div>
                 </div>
             </aside>
@@ -305,20 +284,20 @@
         let currentChartType = 'bar';
 
         const categoryColorMap = {
-            "経済・生活": "rgba(255, 99, 132, 0.7)",
-            "経済・税制": "rgba(255, 159, 64, 0.7)",
-            "経済・外交": "rgba(255, 205, 86, 0.7)",
-            "社会保障": "rgba(75, 192, 192, 0.7)",
-            "経済・労働": "rgba(54, 162, 235, 0.7)",
-            "安全保障・財政": "rgba(153, 102, 255, 0.7)",
-            "エネルギー・環境": "rgba(201, 203, 207, 0.7)",
-            "政治・行政": "rgba(255, 99, 71, 0.7)",
-            "社会・制度": "rgba(60, 179, 113, 0.7)",
-            "社会基盤": "rgba(210, 105, 30, 0.7)",
-            "社会・地域": "rgba(128, 0, 128, 0.7)",
-            "情報・社会": "rgba(0, 128, 128, 0.7)",
-            "文化・社会": "rgba(255, 140, 0, 0.7)",
-            "教育・社会": "rgba(0, 191, 255, 0.7)"
+            "経済・生活": "rgba(255, 99, 132, 0.7)",   // Red
+            "経済・税制": "rgba(255, 159, 64, 0.7)",  // Orange
+            "経済・外交": "rgba(255, 205, 86, 0.7)",  // Yellow
+            "社会保障": "rgba(75, 192, 192, 0.7)",    // Teal
+            "経済・労働": "rgba(54, 162, 235, 0.7)",   // Blue
+            "安全保障・財政": "rgba(153, 102, 255, 0.7)",// Purple
+            "エネルギー・環境": "rgba(129, 199, 132, 0.7)",// Light Green
+            "政治・行政": "rgba(250, 128, 114, 0.7)",// Salmon
+            "社会・制度": "rgba(60, 179, 113, 0.7)",   // Medium Sea Green
+            "社会基盤": "rgba(210, 105, 30, 0.7)",    // Chocolate
+            "社会・地域": "rgba(128, 0, 128, 0.7)",    // Purple (darker)
+            "情報・社会": "rgba(0, 128, 128, 0.7)",     // Teal (darker)
+            "文化・社会": "rgba(255, 140, 0, 0.7)",    // Dark Orange
+            "教育・社会": "rgba(0, 191, 255, 0.7)"     // Deep Sky Blue
         };
 
         function getScoreTypeName(scoreTypeKey) {
@@ -339,7 +318,6 @@
                 default: return 'グラフ';
             }
         }
-
 
         function createIssueCard(issue) {
             const card = document.createElement('div');
@@ -430,23 +408,22 @@
         }
 
         function renderCategoryFilters() {
-            // Clear existing buttons except "All Issues"
-            const allButton = categoryFiltersContainer.querySelector('[data-category="all"]');
-            categoryFiltersContainer.innerHTML = '';
-            categoryFiltersContainer.appendChild(allButton); // Re-add the "All Issues" button
+            categoryFiltersContainer.innerHTML = ''; // Clear previous buttons
+            const allButton = document.createElement('button');
+            allButton.dataset.category = 'all';
+            allButton.className = 'filter-btn px-4 py-2 rounded-md';
+            allButton.textContent = '全課題';
+            categoryFiltersContainer.appendChild(allButton);
 
             const categories = getUniqueCategories();
             categories.forEach(category => {
                 const button = document.createElement('button');
                 button.dataset.category = category;
-                button.className = 'filter-btn px-4 py-2 rounded-md'; // Removed active class, will be set by updateActiveFilterButton
+                button.className = 'filter-btn px-4 py-2 rounded-md';
                 button.textContent = category;
-                button.addEventListener('click', () => {
-                    currentFilter = category;
-                    renderContent();
-                });
                 categoryFiltersContainer.appendChild(button);
             });
+            updateActiveFilterButton(); // Ensure correct initial active state
         }
         
         function updateActiveFilterButton() {
@@ -490,7 +467,6 @@
             });
             bubbleLegendContainer.appendChild(legendWrapper);
         }
-
 
         function drawBarChart(data) {
             const ctx = document.getElementById('issuesChart').getContext('2d');
@@ -646,18 +622,35 @@
             }
         });
 
+        categoryFiltersContainer.addEventListener('click', (event) => {
+            const targetButton = event.target.closest('.filter-btn');
+            if (targetButton && targetButton.dataset.category) {
+                currentFilter = targetButton.dataset.category;
+                renderContent();
+            }
+        });
+
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderCategoryFilters();
-            renderContent(); 
+            renderCategoryFilters(); // Build category buttons first
+            renderContent(); // Initial render
+            
             const chartContainer = document.querySelector('.chart-container');
-            if (nationalIssuesData.length > 20 && currentChartType === 'bar') { 
-                const newHeight = 400 + (nationalIssuesData.length - 20) * 20; 
-                chartContainer.style.height = `${Math.min(newHeight, 800)}px`; 
-                 if (window.innerWidth <= 768) {
-                    chartContainer.style.height = `${Math.min(newHeight, 600)}px`; 
+            // Adjust chart height based on items and chart type, if needed for bar chart
+            if (currentChartType === 'bar') { 
+                if (nationalIssuesData.length > 20) {
+                    const newHeight = 400 + (nationalIssuesData.length - 20) * 20; 
+                    chartContainer.style.height = `${Math.min(newHeight, 800)}px`; 
+                     if (window.innerWidth <= 768) {
+                        chartContainer.style.height = `${Math.min(newHeight, 600)}px`; 
+                    }
+                } else {
+                     chartContainer.style.height = '600px';
+                     if (window.innerWidth <= 768) {
+                        chartContainer.style.height = '500px';
+                     }
                 }
-            } else { 
+            } else { // Default height for other charts or fewer items
                  chartContainer.style.height = '600px';
                  if (window.innerWidth <= 768) {
                     chartContainer.style.height = '500px';
